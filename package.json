@@ -1,0 +1,43 @@
+
+{
+  "name": "civicresolve-2",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "server": "tsx server/src/index.ts",
+    "seed": "tsx server/prisma/seed.ts",
+    "db:generate": "prisma generate --schema server/prisma/schema.prisma",
+    "db:push": "prisma db push --schema server/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "@vitejs/plugin-react": "latest",
+    "bcryptjs": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "jsonwebtoken": "latest",
+    "leaflet": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-leaflet": "latest",
+    "react-router-dom": "latest",
+    "recharts": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/cors": "latest",
+    "@types/express": "latest",
+    "@types/jsonwebtoken": "latest",
+    "@types/node": "latest",
+    "prisma": "6.19.0",
+    "tsx": "latest"
+  }
+}

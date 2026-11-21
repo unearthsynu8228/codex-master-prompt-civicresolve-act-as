@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum Role {
+  CITIZEN
+  ADMIN
+  SUPER_ADMIN
+}
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+enum ComplaintStatus {
+  REPORTED
+  UNDER_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  REOPENED
+}
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  mobile String @unique
+  passwordHash String
+  role Role @default(CITIZEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  citizenProfile CitizenProfile?
+  adminProfile AdminProfile?
+  complaints Complaint[] @relation("Reporter")
+  endorsements ComplaintEndorsement[]
+  follows ComplaintFollow[]
+  notifications Notification[]
+}
+model CitizenProfile {
+  id String @id @default(cuid())
+  userId String @unique
+  address String?
+  ward String?
+  verified Boolean @default(false)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model AdminProfile {
+  id String @id @default(cuid())
+  userId String @unique
+  employeeId String
+  departmentId String?
+  designation String
+  wardZone String
+  verificationStatus VerificationStatus @default(PENDING)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id])
+  verification AdminVerification?
+}
+model Department {
+  id String @id @default(cuid())
+  name String @unique
+  createdAt DateTime @default(now())
+  admins AdminProfile[]
+  officers Officer[]
+  complaints Complaint[]
+}
+model Officer {
+  id String @id @default(cuid())
+  name String
+  designation String
+  departmentId String
+  active Boolean @default(true)
+  department Department @relation(fields: [departmentId], references: [id])
+  complaints Complaint[]
+}
+model Complaint {
+  id String @id @default(cuid())
+  publicId String @unique
+  title String
+  description String
+  originalCategory String
+  aiCategory String?
+  severity Severity @default(MEDIUM)
+  urgencyScore Int?
+  aiExplanation String?
+  recommendedAction String?
+  status ComplaintStatus @default(REPORTED)
+  address String
+  landmark String?
+  latitude Float
+  longitude Float
+  slaTarget DateTime?
+  departmentOverrideReason String?
+  reportedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reporterId String
+  reporter User @relation("Reporter", fields: [reporterId], references: [id])
+  departmentId String?
+  department Department? @relation(fields: [departmentId], references: [id])
+  officerId String?
+  officer Officer? @relation(fields: [officerId], references: [id])
+  images ComplaintImage[]
+  timeline ComplaintTimeline[]
+  endorsements ComplaintEndorsement[]
+  follows ComplaintFollow[]
+  notifications Notification[]
+  resolution ResolutionRecord?
+  @@index([status, severity])
+  @@index([latitude, longitude])
+  @@index([departmentId, status])
+  @@index([reportedAt])
+}
+model ComplaintImage {
+  id String @id @default(cuid())
+  url String
+  kind String @default("EVIDENCE")
+  complaintId String
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+model ComplaintTimeline {
+  id String @id @default(cuid())
+  event String
+  details String?
+  actorId String?
+  createdAt DateTime @default(now())
+  complaintId String
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  @@index([complaintId, createdAt])
+}
+model ComplaintEndorsement {
+  id String @id @default(cuid())
+  userId String
+  complaintId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  @@unique([userId, complaintId])
+}
+model ComplaintFollow {
+  id String @id @default(cuid())
+  userId String
+  complaintId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  @@unique([userId, complaintId])
+}
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  complaintId String?
+  title String
+  message String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaint Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  @@index([userId, readAt])
+}
+model AdminVerification {
+  id String @id @default(cuid())
+  adminProfileId String @unique
+  employeeIdMasked String
+  status VerificationStatus @default(PENDING)
+  reviewerId String?
+  reviewNote String?
+  submittedAt DateTime @default(now())
+  reviewedAt DateTime?
+  adminProfile AdminProfile @relation(fields: [adminProfileId], references: [id], onDelete: Cascade)
+}
+model ResolutionRecord {
+  id String @id @default(cuid())
+  complaintId String @unique
+  notes String
+  resolutionImageUrl String?
+  verifiedById String?
+  resolvedAt DateTime @default(now())
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+}
